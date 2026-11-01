@@ -31,8 +31,8 @@ func (DB *Database) Squish() {
 	//fmt.Printf("Original DB dims: ")
 	//DB.Data.Dim()
 
-	DB.Info.Basis = 10
-	DB.Info.Squishing = 3 
+	DB.Info.Basis = 16
+	DB.Info.Squishing = 4
 	DB.Info.Cols = DB.Data.Cols
 	DB.Data.Squish(DB.Info.Basis, DB.Info.Squishing)
 
@@ -52,11 +52,17 @@ func (DB *Database) Unsquish() {
 // Store the database with entries decomposed into Z_p elements, and mapped to [-p/2, p/2]
 // Z_p elements that encode the same database entry are stacked vertically below each other.
 func ReconstructElem(vals []uint64, index uint64, info DBinfo) uint64 {
-	q := uint64(1 << info.Logq)
+	// q := uint64(1 << info.Logq)
 
-	for i, _ := range vals {
-		vals[i] = (vals[i] + info.P/2) % q
-		vals[i] = vals[i] % info.P
+	for i := range vals {
+		vals[i] += info.P / 2
+
+		// avoiding overflow with logq = 64
+		if info.Logq < 64 {
+			vals[i] %= (uint64(1) << info.Logq)
+		}
+
+		vals[i] %= info.P
 	}
 
 	val := Reconstruct_from_base_p(info.P, vals)
@@ -84,7 +90,9 @@ func (DB *Database) GetElem(i uint64) uint64 {
 
 	var vals []uint64
 	for j := row * DB.Info.Ne; j < (row+1)*DB.Info.Ne; j++ {
-		vals = append(vals, DB.Data.Get(j, col))
+		v := DB.Data.Get(j, col)
+		v = (v + DB.Info.P/2) % DB.Info.P // convert from centered back to normal value
+		vals = append(vals, v)
 	}
 
 	return ReconstructElem(vals, i, DB.Info)

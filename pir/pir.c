@@ -3,10 +3,15 @@
 #include <stdio.h>
 
 // Hard-coded, to allow for compiler optimizations:
-#define COMPRESSION 3
-#define BASIS       10
-#define BASIS2      BASIS*2
-#define MASK        (1<<BASIS)-1
+// #define COMPRESSION 3
+// #define BASIS       10
+// #define BASIS2      BASIS*2
+// #define MASK        (1<<BASIS)-1
+#define COMPRESSION 4
+#define BASIS       16
+#define BASIS2      (BASIS*2)
+#define BASIS3      (BASIS*3)
+#define MASK        ((1ULL<<BASIS)-1)
 
 void matMul(Elem *out, const Elem *a, const Elem *b,
     size_t aRows, size_t aCols, size_t bCols)
@@ -37,10 +42,12 @@ void matMulTransposedPacked(Elem *out, const Elem *a, const Elem *b,
     	val = db & MASK;
     	val2 = (db >> BASIS) & MASK;
     	val3 = (db >> BASIS2) & MASK;
+      val4 = (db >>BASIS3) & MASK;
         for (size_t j = 0; j < bRows; j += 1) {
 	  out[bRows*i+j] += val*b[k*COMPRESSION+j*bCols];
 	  out[bRows*i+j] += val2*b[k*COMPRESSION+j*bCols+1];
 	  out[bRows*i+j] += val3*b[k*COMPRESSION+j*bCols+2];
+    out[bRows*i+j] += val4*b[k*COMPRESSION+j*bCols+3];
 	}
       }
     }
@@ -172,6 +179,24 @@ void matMulVecPacked(Elem *out, const Elem *a, const Elem *b,
       val6 = (db6 >> BASIS2) & MASK;
       val7 = (db7 >> BASIS2) & MASK;
       val8 = (db8 >> BASIS2) & MASK;
+      tmp  += val*b[index2];
+      tmp2 += val2*b[index2];
+      tmp3 += val3*b[index2];
+      tmp4 += val4*b[index2];
+      tmp5 += val5*b[index2];
+      tmp6 += val6*b[index2];
+      tmp7 += val7*b[index2];
+      tmp8 += val8*b[index2];
+      index2 += 1;
+
+      val  = (db >> BASIS3) & MASK;
+      val2 = (db2 >> BASIS3) & MASK;
+      val3 = (db3 >> BASIS3) & MASK;
+      val4 = (db4 >> BASIS3) & MASK;
+      val5 = (db5 >> BASIS3) & MASK;
+      val6 = (db6 >> BASIS3) & MASK;
+      val7 = (db7 >> BASIS3) & MASK;
+      val8 = (db8 >> BASIS3) & MASK;
       tmp  += val*b[index2];
       tmp2 += val2*b[index2];
       tmp3 += val3*b[index2];

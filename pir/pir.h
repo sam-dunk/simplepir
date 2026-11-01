@@ -1,7 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-typedef uint32_t Elem;
+// forced to bump up to 64-bit integers to support log_q > 32
+typedef uint64_t Elem;
 
 void transpose(Elem *out, const Elem *in, size_t rows, size_t cols);
 

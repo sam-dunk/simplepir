@@ -193,8 +193,14 @@ func (pi *SimplePIR) Recover(i uint64, batch_index uint64, offline Msg, query Ms
 	for j := uint64(0); j<p.M; j++ {
         	offset += ratio*query.Data[0].Get(j,0)
 	}
-	offset %= (1 << p.Logq)
-	offset = (1 << p.Logq)-offset
+
+	if p.Logq < 64 {
+		offset %= (1 << p.Logq)
+		offset = (1 << p.Logq)-offset
+	} else { // need this case to avoid overflow when using logq = 64
+		// q = 2^64
+		offset = -offset
+	}
 
 	row := i / p.M
 	interm := MatrixMul(H, secret)

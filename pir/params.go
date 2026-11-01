@@ -1,6 +1,7 @@
 package pir
 
 import "math"
+import "math/big"
 import "strings"
 import "strconv"
 import "fmt"
@@ -21,7 +22,12 @@ type Params struct {
 }
 
 func (p *Params) Delta() uint64 {
-	return (1 << p.Logq) / (p.P)
+	// return (1 << p.Logq) / (p.P)
+
+	// avoids overflow when logq = 64
+	q := new(big.Int).Lsh(big.NewInt(1), uint(p.Logq))
+    q.Div(q, new(big.Int).SetUint64(p.P))
+    return q.Uint64()
 }
 
 func (p *Params) delta() uint64 {

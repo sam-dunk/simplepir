@@ -39,7 +39,7 @@ func MatrixRand(rows uint64, cols uint64, logmod uint64, mod uint64) *Matrix {
 	out := MatrixNew(rows, cols)
 	m := big.NewInt(int64(mod))
 	if mod == 0 {
-		m = big.NewInt(1 << logmod)
+		m = new(big.Int).Lsh(big.NewInt(1), uint(logmod))
 	}
 	for i := 0; i < len(out.Data); i++ {
 		out.Data[i] = C.Elem(RandInt(m).Uint64())
@@ -156,7 +156,7 @@ func MatrixMul(a *Matrix, b *Matrix) *Matrix {
 
 func MatrixMulTransposedPacked(a *Matrix, b *Matrix, basis, compression uint64) *Matrix {
         fmt.Printf("%d-by-%d vs. %d-by-%d\n", a.Rows, a.Cols, b.Cols, b.Rows)
-        if compression != 3 && basis != 10 {
+        if compression != 4 && basis != 16 {
                 panic("Must use hard-coded values!")
         }
 
@@ -205,7 +205,7 @@ func MatrixMulVecPacked(a *Matrix, b *Matrix, basis, compression uint64) *Matrix
 	if b.Cols != 1 {
 		panic("Second argument is not a vector")
 	}
-	if compression != 3 && basis != 10 {
+	if compression != 4 && basis != 16 {
 		panic("Must use hard-coded values!")
 	}
 
