@@ -78,9 +78,14 @@ func main() {
 
     // start benchmarking
     fmt.Printf("Starting benchmarks\n")
-    start := time.Now()
+    var queryTime time.Duration
+    var answerTime time.Duration
+    var recoverTime time.Duration
+
+    benchStart := time.Now()
 
     for _, idx := range indices {
+        t := time.Now()
         clientState, q := 
             scheme.Query(
                 idx,
@@ -88,7 +93,9 @@ func main() {
                 params,
                 db.Info,
             )
+        queryTime += time.Since(t)
 
+        t = time.Now()
         answer :=
             scheme.Answer(
                 db,
@@ -97,7 +104,9 @@ func main() {
                 shared,
                 params,
             )
+        answerTime += time.Since(t)
 
+        t = time.Now()
         recovered :=
             scheme.Recover(
                 idx,
@@ -110,16 +119,25 @@ func main() {
                 params,
                 db.Info,
             )
+        recoverTime += time.Since(t)
 
         sink += recovered
     }
 
-    elapsed := time.Since(start)
-    fmt.Printf("Done!\n")
+    wallTime := time.Since(benchStart)
+    fmt.Printf("Done! Wall total: %v\n", wallTime)
 
-    fmt.Printf("Queries: %d\n", *x)
-    fmt.Printf("Avg/query: %v\n",
-        elapsed/time.Duration(*x))
-    fmt.Printf("Queries/sec: %.2f\n",
-        float64(*x)/elapsed.Seconds())
+    fmt.Printf("\nAggregate timings\n")
+    fmt.Printf("Query total:   %v\n", queryTime)
+    fmt.Printf("Answer total:  %v\n", answerTime)
+    fmt.Printf("Recover total: %v\n", recoverTime)
+    totalTime := queryTime + answerTime + recoverTime
+    fmt.Printf("Online total:  %v\n", totalTime)
+
+    fmt.Printf("\nPer-query timing\n")
+    fmt.Printf("Query:   %v avg\n", queryTime/time.Duration(*x))
+    fmt.Printf("Answer:  %v avg\n", answerTime/time.Duration(*x))
+    fmt.Printf("Recover: %v avg\n", recoverTime/time.Duration(*x))
+    fmt.Printf("Total:   %v avg\n", totalTime/time.Duration(*x))
+    fmt.Printf("Queries/sec: %.2f\n", float64(*x)/totalTime.Seconds())
 }
