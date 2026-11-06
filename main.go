@@ -12,11 +12,11 @@ import (
 func main() {
     N := flag.Uint64("N", 1024, "record count")
     d := flag.Uint64("d", 1, "number of 16-bit blocks per record")
-    logq := flag.Uint64("logq", 64, "log2(ciphertext modulus)")
     n := flag.Uint64("n", 1024, "LWE dimension")
     x := flag.Uint64("x", 1000, "number of PIR querie to run")
 
     const w uint64 = 16
+    const logq uint64 = 64
 
     // SimplePIR prototype uses the plaintext modulus p both for arithmetic and
     // for determining database packing. To model databases composed of 16-bit
@@ -29,7 +29,7 @@ func main() {
 
     flag.Parse()
 
-    fmt.Printf("Using: N=%d; d=%d; p=%d; logq=%d; n=%d; x=%d\n", *N, *d, p, *logq, *n, *x)
+    fmt.Printf("Using: N=%d; d=%d; p=%d; logq=%d; n=%d; x=%d\n", *N, *d, p, logq, *n, *x)
 
     l, m := pir.ApproxSquareDatabaseDims(
         *N,      // number of records
@@ -47,19 +47,11 @@ func main() {
         N: *n,          // LWE secret dimension
         L: l,           // DB height
         M: m,           // DB width
-        Logq: *logq,    // (logarithm of) ciphertext modulus
+        Logq: logq,    // (logarithm of) ciphertext modulus
         P: p,           // plaintext modulus 
     }
 
     scheme := pir.SimplePIR{}
-
-    fmt.Printf("Creating random DB\n")
-
-    db := pir.MakeRandomDB(
-        *N,
-        *d * w,
-        &params,
-    )
 
     // pre-generate X many indices to query
     fmt.Printf("Preselecting indices to query\n")
@@ -69,10 +61,27 @@ func main() {
         indices[i] = uint64(rng.Int63n(int64(*N)))
     }
 
-    // protocol setup - one time cost so not timed
-    fmt.Printf("Running offline setup\n")
-    shared := scheme.Init(db.Info, params)
-    _, offline := scheme.Setup(db, shared, params)
+    // Benchmark-only fast path.
+    // The prototype materializes and processes the full offline state
+    // despite the benchmark never validating PIR correctness. We replace
+    // the database, public matrix A, and offline hint H with correctly
+    // sized zero matrices so that Query/Answer/Recover execute with the
+    // expected dimensions while avoiding hours of unnecessary setup work.
+
+    fmt.Printf("Creating test db, A, hint_c\n")
+
+    db := pir.SetupDB(*N, *d * w, &params)
+    db.Info.Basis = 16
+    db.Info.Squishing = 4
+    db.Info.Cols = params.M 
+    db.Data = pir.MatrixZeros(params.L, (params.M + 3) / 4)
+
+    shared := pir.MakeState(
+        pir.MatrixZeros(params.M, params.N),
+    )
+    offline := pir.MakeMsg(
+        pir.MatrixZeros(params.L, params.N),
+    )
 
     var sink uint64 
 
