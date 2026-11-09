@@ -88,9 +88,11 @@ func main() {
     var answerTime time.Duration
     var recoverTime time.Duration
 
-    benchStart := time.Now()
+    var hotPathTime time.Duration
 
-    for _, idx := range indices {
+    for i, idx := range indices {
+		hot_t := time.Now()
+
         t := time.Now()
         clientState, q := 
             scheme.Query(
@@ -127,11 +129,23 @@ func main() {
             )
         recoverTime += time.Since(t)
 
+		hotPathTime += time.Since(hot_t)
+
+		// progress prints
+		if ((i+1)%100 == 0) {
+			fmt.Printf(
+					"[%d/%d] total=%v avg=%v\n",
+					i+1,
+					len(indices),
+					hotPathTime,
+					hotPathTime/time.Duration(i+1),
+				)
+    	}
+
         sink += recovered
     }
 
-    wallTime := time.Since(benchStart)
-    fmt.Printf("Done! Wall total: %v\n", wallTime)
+    fmt.Printf("Done! Wall total: %v\n", hotPathTime)
 
     fmt.Printf("\nAggregate timings\n")
     fmt.Printf("Query total:   %v\n", queryTime)
