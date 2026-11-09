@@ -156,7 +156,7 @@ func MatrixMul(a *Matrix, b *Matrix) *Matrix {
 
 func MatrixMulTransposedPacked(a *Matrix, b *Matrix, basis, compression uint64) *Matrix {
         fmt.Printf("%d-by-%d vs. %d-by-%d\n", a.Rows, a.Cols, b.Cols, b.Rows)
-        if compression != 3 && basis != 10 {
+        if compression != 4 && basis != 8 {
                 panic("Must use hard-coded values!")
         }
 
@@ -205,7 +205,7 @@ func MatrixMulVecPacked(a *Matrix, b *Matrix, basis, compression uint64) *Matrix
 	if b.Cols != 1 {
 		panic("Second argument is not a vector")
 	}
-	if compression != 3 && basis != 10 {
+	if compression != 4 && basis != 8 {
 		panic("Must use hard-coded values!")
 	}
 

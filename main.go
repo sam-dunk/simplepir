@@ -12,16 +12,16 @@ import (
 func main() {
     N := flag.Uint64("N", 1024, "record count")
     d := flag.Uint64("d", 1, "number of 2-byte elements per record")
-    n := flag.Uint64("n", 1024, "LWE dimension")
-	w := flag.Uint64("w", 10, "log_2(p) - number of bits available per plaintext block")
-	logq := flag.Uint64("logq", 32, "log of q")
+    n := flag.Uint64("n", 1077, "LWE dimension")
     x := flag.Uint64("x", 1000, "number of PIR querie to run")
 
     flag.Parse()
 
-	var p uint64 = 1 << *w
+    // generated secure parameters with p=2^8 log_q=32, so p/w and logq are set in stone
+	var p uint64 = 1 << 8
+    var logq uint64 = 32
 
-    fmt.Printf("Using: N=%d; d=%d; p=%d; logq=%d; n=%d; x=%d\n", *N, *d, p, *logq, *n, *x)
+    fmt.Printf("Using: N=%d; d=%d; p=%d; logq=%d; n=%d; x=%d\n", *N, *d, p, logq, *n, *x)
 
     l, m := pir.ApproxSquareDatabaseDims(
         *N,      // number of records
@@ -39,7 +39,7 @@ func main() {
         N: *n,          // LWE secret dimension
         L: l,           // DB height
         M: m,           // DB width
-        Logq: *logq,   	// (logarithm of) ciphertext modulus
+        Logq: logq,   	// (logarithm of) ciphertext modulus
         P: p,           // plaintext modulus 
     }
 
@@ -65,10 +65,10 @@ func main() {
 
 	// matrix DB
     db := pir.SetupDB(*N, *d * 16, &params)
-    db.Info.Basis = 10
-    db.Info.Squishing = 3
+    db.Info.Basis = 8
+    db.Info.Squishing = 4
     db.Info.Cols = params.M 
-    db.Data = pir.MatrixZeros(params.L, (params.M + 2) / 3)
+    db.Data = pir.MatrixZeros(params.L, (params.M + 3) / 4)
 
 	// matrix A
     shared := pir.MakeState(
